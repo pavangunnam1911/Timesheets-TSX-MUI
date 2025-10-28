@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import {Dialog,DialogTitle,DialogContent,DialogActions,TextField,Button,MenuItem} from "@mui/material";
 import dayjs from "dayjs";
-import type { Timesheet,AddDataFormProps } from "../types/Timesheet";
+import type { Timesheet } from "../../types/Timesheet";
+import type { IAddDataFormProps } from "./IAddDataFormProps"; 
 
 const defaultForm: Timesheet = {
   id: "",
@@ -15,7 +16,7 @@ const defaultForm: Timesheet = {
   status: "Pending", 
 };
 
-const AddDataForm: React.FC<AddDataFormProps> = ({open,onClose,onSave,editData}) => {
+const AddDataForm: React.FC<IAddDataFormProps> = ({open,onClose,onSave,editData}) => {
 
   const [form, setForm] = useState<Timesheet>(defaultForm);
 

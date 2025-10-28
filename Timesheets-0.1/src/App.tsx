@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import {ThemeProvider,Container,Box,Typography,Button,Dialog,} from "@mui/material";
-import Header from "./components/Header";
-import FabMenu from "./components/FabMenu";
-import CalendarView from "./components/CalendarView";
-import AddDataForm from "./components/AddDataForm";
-import TimesheetTable from "./components/TimesheetTable";
+import Header from "./components/Header/Header";
+import FabMenu from "./components/FabMenu/FabMenu";
+import CalendarView from "./components/CalendarView/CalendarView";
+import AddDataForm from "./components/AddDataForm/AddDataForm";
+import TimesheetTable from "./components/TimesheetTable/TimesheetTable";
 import { theme } from "./theme";
 import type { Timesheet } from "./types/Timesheet";
 

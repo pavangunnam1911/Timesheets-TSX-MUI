@@ -5,9 +5,9 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DateCalendar } from "@mui/x-date-pickers/DateCalendar";
 import dayjs from "dayjs";
-import type { CalendarViewProps } from "../types/Timesheet";
+import type { ICalendarViewProps } from "./ICalendarViewProps"; 
 
-const CalendarView: React.FC<CalendarViewProps> = ({ data, onSelectDate, onCancel }) => {
+const CalendarView: React.FC<ICalendarViewProps> = ({ data, onSelectDate, onCancel }) => {
   const counts: Record<string, number> = {};
   data.forEach((entry) => {
     if (entry.date) {

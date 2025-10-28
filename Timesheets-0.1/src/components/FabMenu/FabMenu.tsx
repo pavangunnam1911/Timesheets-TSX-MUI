@@ -2,9 +2,9 @@ import React, { useState } from "react";
 import { SpeedDial, SpeedDialAction, SpeedDialIcon, Box } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
-import type {FabMenuProps} from "../types/Timesheet";
+import type { IFabMenuProps } from "./IFabMenuProps"; 
 
-const FabMenu: React.FC<FabMenuProps> = ({ onAdd, onViewCalendar }) => {
+const FabMenu: React.FC<IFabMenuProps> = ({ onAdd, onViewCalendar }) => {
   const [open, setOpen] = useState(false);
 
   const actions = [

@@ -3,10 +3,11 @@ import {Paper,Table,TableBody,TableCell,TableContainer,TableHead,TableRow,IconBu
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import * as XLSX from "xlsx";
-import type { Timesheet, TableProps } from "../types/Timesheet";
-import { theme } from "../theme";
+import type { Timesheet } from "../../types/Timesheet";
+import type { ITableProps } from "./ITableProps"; 
+import { theme } from "../../theme"; 
 
-const TimesheetTable: React.FC<TableProps> = ({ data, onEdit, onDelete }) => {
+const TimesheetTable: React.FC<ITableProps> = ({ data, onEdit, onDelete }) => {
   const [selected, setSelected] = useState<Timesheet | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
 
