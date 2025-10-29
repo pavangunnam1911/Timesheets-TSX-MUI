@@ -4,6 +4,7 @@ export interface Timesheet {
   date: string;
   loginTime: string;
   logoutTime: string;
+  project: string;
   task: string;
   description: string;
   priority: "Low" | "Medium" | "High";

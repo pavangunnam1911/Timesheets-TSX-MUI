@@ -1,15 +1,21 @@
 import React, { useState } from "react";
-import {Paper,Table,TableBody,TableCell,TableContainer,TableHead,TableRow,IconButton,Dialog,DialogTitle,DialogActions,Button,Box,} from "@mui/material";
+import {Paper,Table,TableBody,TableCell,TableContainer,TableHead,TableRow,IconButton,Dialog,DialogTitle,DialogActions,Button,Box,Checkbox,Menu,MenuItem} from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 import * as XLSX from "xlsx";
 import type { Timesheet } from "../../types/Timesheet";
 import type { ITableProps } from "./ITableProps"; 
 import { theme } from "../../theme"; 
+import dayjs from "dayjs";
 
 const TimesheetTable: React.FC<ITableProps> = ({ data, onEdit, onDelete }) => {
   const [selected, setSelected] = useState<Timesheet | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [anchor,setanchor] = useState<null|HTMLElement>(null);
+  const [menuRow, setMenuRow]= useState<Timesheet|null>(null);
 
   const getPriorityColor = (priority: Timesheet["priority"]) => {
     switch (priority) {
@@ -44,6 +50,7 @@ const TimesheetTable: React.FC<ITableProps> = ({ data, onEdit, onDelete }) => {
     const exportData = data.map((row) => ({
       Date: row.date,
       Name: row.name,
+      Project: row.project,
       Task: row.task,
       "Login Time": row.loginTime,
       "Logout Time": row.logoutTime,
@@ -58,6 +65,44 @@ const TimesheetTable: React.FC<ITableProps> = ({ data, onEdit, onDelete }) => {
     XLSX.writeFile(workbook, "Timesheets.xlsx");
   };
 
+  const isAllSelected = data.length > 0 && selectedIds.length === data.length;
+
+  const handleSelectAll = (e:React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) setSelectedIds(data.map((row)=>row.id));
+    else setSelectedIds([]);
+  };
+
+  const handleSelectedOne = (id:string) => {
+    setSelectedIds((prev) => prev.includes(id) ? prev.filter((sid) => sid !== id) : [...prev,id]);
+  };
+
+  const calculateHours = (login:string , logout:string) => {
+    const start = dayjs(login,"HH:mm");
+    const end = dayjs(logout, "HH:mm");
+    const diff = end.diff(start, "hour" , true);
+    return diff > 0 ? diff.toFixed(2) : "0";
+  };
+
+  const handleMenuOpen = (event:React.MouseEvent<HTMLElement>,row : Timesheet) =>{
+    setanchor(event.currentTarget);
+    setMenuRow(row);
+  };
+
+  const handleMenuClose =()=>{
+    setanchor(null);
+    setMenuRow(null);
+  };
+
+  const handleEdit = () => {
+    if(menuRow) onEdit(menuRow);
+    handleMenuClose();
+  };
+
+  const handleDelete = () =>{
+    if(menuRow) onDelete(menuRow.id);
+    handleMenuClose();
+  }
+
   if (data.length === 0)
     return (
       <Paper sx={{ p: 4, textAlign: "center", mt: 4 }}>
@@ -65,9 +110,14 @@ const TimesheetTable: React.FC<ITableProps> = ({ data, onEdit, onDelete }) => {
       </Paper>
     );
 
+
   return (
     <>
+      
       <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
+        <Button  variant="contained" color="error" sx={{mr:2}} disabled={selectedIds.length === 0} onClick={() => setShowConfirm(true)}>
+          Delete
+        </Button>
         <Button variant="contained" color="secondary" startIcon={<FileDownloadIcon />} onClick={handleDownload}>
           Download Excel
         </Button>
@@ -77,34 +127,60 @@ const TimesheetTable: React.FC<ITableProps> = ({ data, onEdit, onDelete }) => {
         <Table>
           <TableHead sx={{ backgroundColor: theme.palette.primary.main }}>
             <TableRow>
-              <TableCell sx={{ fontWeight: "bold", color: "white" }}>Actions</TableCell>
-              <TableCell sx={{ fontWeight: "bold", color: "white" }}>Date</TableCell>
+              <TableCell >
+                <Checkbox color="default" checked={isAllSelected} indeterminate={selectedIds.length > 0 && selectedIds.length<data.length} onChange={handleSelectAll}/>
+              </TableCell>
               <TableCell sx={{ fontWeight: "bold", color: "white" }}>Name</TableCell>
-              <TableCell sx={{ fontWeight: "bold", color: "white" }}>Task</TableCell>
+              <TableCell sx={{ fontWeight: "bold", color: "white" }}>Date</TableCell>
               <TableCell sx={{ fontWeight: "bold", color: "white" }}>Login</TableCell>
               <TableCell sx={{ fontWeight: "bold", color: "white" }}>Logout</TableCell>
+              <TableCell sx={{ fontWeight: "bold", color: "white" }}>Project Name</TableCell>
+              <TableCell sx={{ fontWeight: "bold", color: "white" }}>Task</TableCell>
               <TableCell sx={{ fontWeight: "bold", color: "white" }}>Priority</TableCell>
+              <TableCell sx={{ fontWeight: "bold", color: "white" }}>Hours Spent</TableCell>
               <TableCell sx={{ fontWeight: "bold", color: "white" }}>Status</TableCell>
+              <TableCell sx={{ fontWeight: "bold", color: "white" }}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {data.map((row) => (
               <TableRow key={row.id}>
                 <TableCell>
-                  <IconButton onClick={() => setSelected(row)}>
-                    <MoreVertIcon />
-                  </IconButton>
+                  <Checkbox checked={selectedIds.includes(row.id)} onChange={()=>handleSelectedOne(row.id)}/>
                 </TableCell>
-                <TableCell>{row.date}</TableCell>
                 <TableCell>{row.name}</TableCell>
-                <TableCell>{row.task}</TableCell>
+                <TableCell>{row.date}</TableCell>
                 <TableCell>{row.loginTime}</TableCell>
                 <TableCell>{row.logoutTime}</TableCell>
+                <TableCell>{row.project}</TableCell>
+                <TableCell>{row.task}</TableCell>
                 <TableCell sx={getPriorityColor(row.priority)}>
                   {row.priority}
                 </TableCell>
+                <TableCell>
+                  {calculateHours(row.loginTime,row.logoutTime)}
+                </TableCell>
                 <TableCell sx={getStatusStyle(row.status)}>
                   {row.status}
+                </TableCell>
+                <TableCell>
+                  <IconButton onClick={(e) => handleMenuOpen(e,row)}>
+                    <MoreVertIcon />
+                  </IconButton>
+                  <Menu
+                    anchorEl={anchor}
+                    open={Boolean(anchor)}
+                    onClose={handleMenuClose}
+                  >
+                    <MenuItem onClick={handleEdit}>
+                      <EditIcon fontSize="small" sx={{ mr: 1 }} />
+                      Edit
+                    </MenuItem>
+                    <MenuItem onClick={handleDelete}>
+                      <DeleteIcon fontSize="small" sx={{ mr: 1 }} color="error" />
+                      Delete
+                    </MenuItem>
+                  </Menu>
                 </TableCell>
               </TableRow>
             ))}
@@ -113,8 +189,8 @@ const TimesheetTable: React.FC<ITableProps> = ({ data, onEdit, onDelete }) => {
       </TableContainer>
 
       {selected && (
-        <Dialog open={!!selected} onClose={() => setSelected(null)}>
-          <DialogTitle> Employee : {selected.name} <br/>Task : {selected.task}</DialogTitle>
+        <Dialog open={!!selected} onClose={() => setSelected(null)} fullWidth  sx={{}}>
+          <DialogTitle sx={{ml:10}}> Employee : {selected.name} <br/>Project : {selected.project}</DialogTitle>
           <DialogActions>
             <Button onClick={() => { onEdit(selected); setSelected(null); }}>Edit</Button>
             <Button color="error" variant="contained" onClick={() => { setSelected(null); setShowConfirm(true);}}> Delete </Button>
@@ -127,8 +203,9 @@ const TimesheetTable: React.FC<ITableProps> = ({ data, onEdit, onDelete }) => {
         <DialogActions>
           <Button onClick={() => setShowConfirm(false)}>Cancel</Button>
           <Button color="error" variant="contained" onClick={() => {
-              if (selected) onDelete(selected.id);
-              setShowConfirm(false);
+            selectedIds.forEach((id) => onDelete(id));
+            setSelectedIds([]);
+            setShowConfirm(false);
             }}
           >
             Delete

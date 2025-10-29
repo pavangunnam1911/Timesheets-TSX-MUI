@@ -10,6 +10,7 @@ const defaultForm: Timesheet = {
   date: dayjs().format("YYYY-MM-DD"),
   loginTime: "10:00",
   logoutTime: "20:00",
+  project: "",
   task: "",
   description: "",
   priority: "Medium",
@@ -29,7 +30,7 @@ const AddDataForm: React.FC<IAddDataFormProps> = ({open,onClose,onSave,editData}
   };
 
   const handleSubmit = () => {
-    if (!form.name || !form.task) {
+    if (!form.name || !form.project) {
       alert("Please fill in all required fields.");
       return;
     }
@@ -41,10 +42,11 @@ const AddDataForm: React.FC<IAddDataFormProps> = ({open,onClose,onSave,editData}
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>{editData ? "Edit Timesheet Entry" : "Add New Timesheet Entry"}</DialogTitle>
       <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
-        <TextField required label="Employee Name" name="name" value={form.name} onChange={handleChange} />
+        <TextField sx={{mt:1}} required label="Employee Name" name="name" value={form.name} onChange={handleChange} />
         <TextField required type="date" label="Date" name="date" value={form.date} onChange={handleChange} InputLabelProps={{ shrink: true }} />
         <TextField required type="time" label="Login Time" name="loginTime" value={form.loginTime} onChange={handleChange} InputLabelProps={{ shrink: true }} />
         <TextField required type="time" label="Logout Time" name="logoutTime" value={form.logoutTime} onChange={handleChange} InputLabelProps={{ shrink: true }} />
+        <TextField required label="Project" name="project" value={form.project} onChange={handleChange} />
         <TextField required label="Task" name="task" value={form.task} onChange={handleChange} />
         <TextField label="Description" name="description" multiline rows={3} value={form.description} onChange={handleChange} />
         <TextField select label="Priority" name="priority" value={form.priority} onChange={handleChange}>
