@@ -1,0 +1,29 @@
+.dialogTitle {
+  font-weight: 600;
+}
+
+.dialogContent {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.textField {
+  margin-top: 8px;
+}
+
+.dialogActions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px;
+}
+
+.cancelButton {
+  color: #555;
+}
+
+.saveButton {
+  background-color: #4a90e2;
+  color: white;
+}

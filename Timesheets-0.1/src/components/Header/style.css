@@ -1,0 +1,29 @@
+.headerBar {
+  width: 100%;
+}
+
+.headerTitle {
+  flex-grow: 1;
+  font-weight: 600;
+}
+
+.adminButton {
+  padding-left: 16px;
+}
+
+.adminText {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.adminAvatar {
+  margin-left: 16px;
+}
+
+.appBar{
+  background-color: #4A90E2;
+  padding: 20px 15px 20px 15px;
+  margin-left: -20px;
+  margin-right: -20px;
+  margin-top: -10px;
+}

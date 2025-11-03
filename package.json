@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@mui/styled-engine": "^7.3.3",
     "xlsx": "^0.18.5"
   }
 }

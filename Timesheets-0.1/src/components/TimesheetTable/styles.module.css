@@ -1,0 +1,89 @@
+.emptyTableContainer {
+  padding: 32px;
+  text-align: center;
+  margin-top: 32px;
+}
+
+.tableActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}
+
+.deleteButton {
+  margin-right: 100px;
+}
+
+.tableHead {
+  background-color: #4A90E2;
+}
+
+.tableHeaderCell {
+  font-weight: bold;
+  color: white;
+}
+
+.editMenuItem {
+  display: flex;
+  align-items: center;
+}
+
+.editIcon {
+  margin-right: 8px;
+  font-size: small;
+}
+
+.deleteMenuItem {
+  display: flex;
+  align-items: center;
+}
+
+.deleteIcon {
+  margin-right: 8px;
+}
+
+.confirmTitle {
+  font-weight: 600;
+}
+
+.confirmActions {
+  justify-content: flex-end;
+  padding: 8px 16px;
+}
+
+.confirmDeleteButton {
+  background-color: #d32f2f;
+  color: white;
+}
+
+
+/*
+  const getPriorityColor = (priority: Timesheet["priority"]) => {
+    switch (priority) {
+      case "High":
+        return { color: "red", fontWeight: 600 };
+      case "Medium":
+        return { color: "orange" };
+      case "Low":
+        return { color: "green" };
+      default:
+        return {};
+    }
+  };
+
+  const getStatusStyle = (status: Timesheet["status"]) => {
+    switch (status) {
+      case "Completed":
+        return { color: "green", fontWeight: 600 };
+      case "Pending":
+        return { color: "gray", fontStyle: "italic" };
+      default:
+        return {};
+    }
+  };
+*/
+
+
+.kpiText{
+  display: flex;
+}

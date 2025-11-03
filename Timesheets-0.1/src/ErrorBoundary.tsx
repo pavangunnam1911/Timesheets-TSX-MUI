@@ -1,4 +1,5 @@
 import React from "react";
+import "./ErrorBoundary.css";
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -22,7 +23,7 @@ export class ErrorBoundary extends React.Component< { children: React.ReactNode 
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{ padding: 20, color: "red" }}>
+        <div className="errorMessage">
           <h2>Something went wrong.</h2>
           <pre>{this.state.error?.message}</pre>
         </div>

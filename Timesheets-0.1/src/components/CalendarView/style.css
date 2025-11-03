@@ -1,0 +1,20 @@
+.calendarTitle {
+  font-weight: 600;
+}
+
+.calendarContent {
+  padding: 16px;
+}
+
+.calendarSubtitle {
+  margin-bottom: 16px;
+}
+
+.calendarActions {
+  justify-content: flex-end;
+  padding: 8px 16px;
+}
+
+.closeButton {
+  color: #555;
+}

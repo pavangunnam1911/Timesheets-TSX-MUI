@@ -1,91 +1,59 @@
 import { useState, useEffect } from "react";
-import {ThemeProvider,Container,Box,Typography,Button,Dialog,} from "@mui/material";
-import Header from "./components/Header/Header";
-import FabMenu from "./components/FabMenu/FabMenu";
-import CalendarView from "./components/CalendarView/CalendarView";
-import AddDataForm from "./components/AddDataForm/AddDataForm";
-import TimesheetTable from "./components/TimesheetTable/TimesheetTable";
+import { ThemeProvider, Dialog } from "@mui/material";
+import Header from "./components/Header";
+import FabMenu from "./components/FabMenu";
+import CalendarView from "./components/CalendarView";
+import AddDataForm from "./components/AddDataForm";
 import { theme } from "./theme";
-import type { Timesheet } from "./types/Timesheet";
+import type { Timesheet } from "./Interfaces/Timesheet";
+import { useLocalStorage } from "./Hooks/useLocalStorage";
+import { Routes, Route } from "react-router-dom";
+import Welcomepage from "./Pages/Welcomepage";
+import TableView from "./Pages/TableView";
+import EmployeeCards from "./Pages/Employecards";
 
 export default function App() {
-  const [data, setData] = useState<Timesheet[]>(() => {
-    try {
-      const stored = localStorage.getItem("timesheets");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) return parsed;
-      }
-    } catch (err) {
-      console.error("Failed to parse stored timesheets:", err);
-    }
-    return [];
-  });
-
+  const [data, setData] = useLocalStorage<Timesheet[]>("timesheets", []);
+  const [leaves, setLeaves] = useLocalStorage<Timesheet[]>("leaves", []);
   const [formOpen, setFormOpen] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [editData, setEditData] = useState<Timesheet | null>(null);
 
-  useEffect(() => { localStorage.setItem("timesheets", JSON.stringify(data)); }, [data]);
+  useEffect(() => {
+    localStorage.setItem("timesheets", JSON.stringify(data));
+    localStorage.setItem("leaves", JSON.stringify(leaves));
+  }, [data, leaves]);
 
   const handleSave = (entry: Timesheet) => {
     setData((prev) => {
       const exists = prev.find((d) => d.id === entry.id);
-      const updated = exists? prev.map((d) => (d.id === entry.id ? entry : d)): [...prev, entry];
+      const updated = exists ? prev.map((d) => (d.id === entry.id ? entry : d)) : [...prev, entry];
       localStorage.setItem("timesheets", JSON.stringify(updated));
       return updated;
     });
   };
 
-  const handleDelete = (id: string) => {
-    setData((prev) => {
-      const updated = prev.filter((d) => d.id !== id);
-      localStorage.setItem("timesheets", JSON.stringify(updated));
+  const handleSaveLeave = (entry: Timesheet) => {
+    setLeaves((prev) => {
+      const exists = prev.find((d) => d.id === entry.id);
+      const updated = exists ? prev.map((d) => (d.id === entry.id ? entry : d)) : [...prev, entry];
+      localStorage.setItem("leaves", JSON.stringify(updated));
       return updated;
     });
   };
-
-  const filteredData = selectedDate? data.filter((d) => d.date === selectedDate): data;
 
   return (
     <ThemeProvider theme={theme}>
       <Header />
-      <Container maxWidth="lg" sx={{ pt: 3, pb: 10 }}>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-
-          <Typography variant="h4" fontWeight={700} color="primary.dark">
-            {selectedDate ? `Entries on ${selectedDate}`: "Timesheet Entries"}
-          </Typography>
-
-          {selectedDate && (
-            <Button variant="outlined" color="secondary" onClick={() => setSelectedDate(null)}>
-              Clear Selection
-            </Button>
-          )}
-        </Box>
-
-        <TimesheetTable data={filteredData} onEdit={(item) => {setEditData(item); setFormOpen(true);}} onDelete={handleDelete}/>
-
-      </Container>
-
-      <FabMenu
-        onAdd={() => { setEditData(null); setFormOpen(true); }}
-        onViewCalendar={() => setCalendarOpen(true)}
-      />
-
-      <AddDataForm
-        open={formOpen}
-        onClose={() => setFormOpen(false)}
-        onSave={handleSave}
-        editData={editData}
-      />
-
-      <Dialog
-        open={calendarOpen}
-        onClose={() => setCalendarOpen(false)}
-        maxWidth="xs"
-      >
+      <Routes>
+        <Route path="/" Component={Welcomepage} />
+        <Route path="/TableView" Component={TableView} />
+        <Route path="/EmployeeCount" element={<EmployeeCards data={data} leaves={leaves} />} />
+      </Routes>
+      <FabMenu onAdd={() => { setEditData(null); setFormOpen(true); }} onViewCalendar={() => setCalendarOpen(true)} />
+      <AddDataForm open={formOpen} onClose={() => setFormOpen(false)} onSave={handleSave} onSaveLeave={handleSaveLeave} editData={editData} />
+      <Dialog open={calendarOpen} onClose={() => setCalendarOpen(false)} maxWidth="xs">
         <CalendarView
           data={data}
           onCancel={() => setCalendarOpen(false)}

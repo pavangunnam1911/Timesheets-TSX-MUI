@@ -1,0 +1,20 @@
+.appContainer {
+  padding-top: 24px;
+  padding-bottom: 80px;
+}
+
+.pageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.pageTitle {
+  font-weight: 700;
+  color: var(--mui-color-primary-dark);
+}
+
+.clearButton {
+  border-color: var(--mui-color-secondary-main);
+}
