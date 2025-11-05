@@ -31,7 +31,7 @@ const dialogContentStyle= {
 const CollectDataForm: React.FC<SimpleDialogProps> = (prop) => {
     const [items, setItems] = useLocalStorage<Timesheet[]>("timesheets", []);
     
-    const today = dayjs().format("DD-MM-YYYY");
+    const today = dayjs().format("YYYY-MM-DD");
     const defaultLogin = dayjs().hour(10).minute(0).format("HH:mm");  
     const defaultLogout = dayjs().hour(20).minute(0).format("HH:mm"); 
 
