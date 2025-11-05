@@ -1,0 +1,261 @@
+import {  Box, Button, Checkbox, MenuItem, Select, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton, Tooltip} from "@mui/material";
+import type { SelectChangeEvent } from "@mui/material";
+import React, { useMemo, useState, useEffect } from "react";
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import useLocalStorage from "../../Hooks/useLocalstorage";
+import CollectDataForm from "../DataForm/DataForm";
+import * as XLSX from 'xlsx';
+import type { Timesheet } from "../../Interfaces/Timesheet";
+
+interface TableHeadData {
+  name: string;
+  id: string;
+}
+
+const tableheaddata: TableHeadData[] = [
+  { name: "Date", id: "date" },
+  { name: "Login Time", id: "loginTime" },
+  { name: "Logout Time", id: "logoutTime" },
+  { name: "Total Hours", id: "hours" },
+  { name: "Project Name", id: "project" },
+  { name: "Task Name", id: "task" },
+  { name: "Task Hours", id: "taskhours" },
+  { name: "Task Priority", id: "priority" },
+  { name: "Status", id: "status" },
+];
+
+const TableHeadStyle = {backgroundColor: "rgb(25,118,210)",color: "#ffffff",fontWeight: 600,whiteSpace:"nowrap",textAlign:"center"};
+const selectStyle = {color:"#000000",width:120,mr:5}
+const FilterStyle = {display:"flex",justifyContent:"space-between",mb:2}
+const TableCellStyle = {textOverflow:"ellipsis",overflow:"hidden",textAlign:"center"}
+interface TimesheetTableProps {
+    hideFilters?: boolean;
+    onlyDate?: string; 
+}
+
+interface TimesheetTableProps {
+    hideFilters?: boolean;
+    onlyDate?: string;
+    items?: Timesheet[];
+    setItems?: (v: Timesheet[] | ((prev: Timesheet[]) => Timesheet[])) => void;
+}
+
+const TimesheetTable:React.FC<TimesheetTableProps> = ({ hideFilters = false, onlyDate, items: itemsProp, setItems: setItemsProp }) =>{
+        const isExternal = Array.isArray(itemsProp) && typeof setItemsProp === 'function';
+        const [localItems, localSetItems] = useLocalStorage<Timesheet[]>("timesheets", []);
+        const items = isExternal ? (itemsProp as Timesheet[]) : localItems;
+        const setItems = isExternal ? (setItemsProp as (v: Timesheet[] | ((prev: Timesheet[]) => Timesheet[])) => void) : localSetItems;
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+    const Selectall =(event:React.ChangeEvent<HTMLInputElement>) =>{
+        if (event.target.checked) {
+            const allRows = filteredItems.map(x=>x.id);
+            setSelectedIds(allRows);
+        }
+        else{
+            setSelectedIds([]);
+        }
+    }
+
+    const CheckboxClick = (id:string) => {
+        setSelectedIds((prev) => prev.includes(id) ? prev.filter(x => x!== id) : [...prev,id]
+        );
+    }; 
+
+    const handleDelete = (id: string) => {
+        if (window.confirm("Are you sure you want to delete this entry?")) {
+            setItems(items.filter(x => x.id !== id));
+            setSelectedIds(prev => prev.filter(selectedId => selectedId !== id)); 
+        }
+    };
+
+    const multiDelete = () => {
+       if (window.confirm(`Are you sure you want to delete selected entries?`)) {
+            setItems(items.filter(x => !selectedIds.includes(x.id)));
+            setSelectedIds([]);
+        }
+    }
+
+
+
+    const [dialogOpen, setDialogOpen] = useState<boolean>(false);
+    const [editingItem, setEditingItem] = useState<Timesheet | null>(null);
+
+    const openDialogForEdit = (x: Timesheet) => {
+        setEditingItem(x);
+        setDialogOpen(true);
+    };
+
+    const handleDialogClose = () => {
+        setDialogOpen(false);
+        setEditingItem(null);
+    };
+
+    const handleDialogSave = (item: Timesheet) => {
+        setItems(items.map(x => x.id === item.id ? item : x));
+        setDialogOpen(false);
+        setEditingItem(null);
+    };
+
+
+        const [selectedYear, setSelectedYear] = useState<string>("All");
+        const [selectedMonth, setSelectedMonth] = useState<string>("All");
+        const [selectedDay, setSelectedDay] = useState<string>("All");
+
+        useEffect(() => {
+            if (onlyDate) {
+                const parts = onlyDate.split("-");
+                if (parts.length === 3) {
+                    const [y,m,d] = parts;
+                    setSelectedYear(y);
+                    setSelectedMonth(m);
+                    setSelectedDay(d);
+                }
+            }
+        }, [onlyDate]);
+
+    const years = useMemo(() => {
+        const a = new Set<string>();
+        items.forEach(x => {
+            if (x.date) a.add(x.date.split("-")[0]);
+        });
+        return Array.from(a).sort();
+    }, [items]);
+
+    const monthsForYear = useMemo(() => {
+        const b = new Set<string>();
+        items.forEach(x => {
+            if (!x.date) return;
+            const [year, month] = x.date.split("-");
+            if (selectedYear === "All" || selectedYear === year) b.add(month);
+        });
+        return Array.from(b).sort();
+    }, [items, selectedYear]);
+
+    const filteredItems = useMemo(() => {
+        return items.filter(x => {
+            if (!x.date) return false;
+            const [year, month, day] = x.date.split("-");
+            if (selectedYear !== "All" && selectedYear !== year) return false;
+            if (selectedMonth !== "All" && selectedMonth !== month) return false;
+            if (selectedDay !== "All" && selectedDay !== day) return false;
+            return true;
+        });
+    }, [items, selectedYear, selectedMonth, selectedDay]);
+
+    const handleYearChange = (event: SelectChangeEvent) => {
+        const x = event.target.value;
+        setSelectedYear(x);
+        setSelectedMonth("All");
+        setSelectedDay("All");
+    };
+
+    const handleMonthChange = (event: SelectChangeEvent) => {
+        const x = event.target.value;
+        setSelectedMonth(x);
+        setSelectedDay("All");
+    };
+
+    const formatDate = (date: string) => {
+        const [year, month, day] = date.split("-");
+        return `${day}-${month}-${year}`;
+    };
+
+    const downloadExcel = () => {
+        const exportData = filteredItems.map((x) => ({
+            Date: x.date,
+            Name: x.name,
+            Project: x.project,
+            Task: x.task,
+            "Login Time": x.loginTime,
+            "Logout Time": x.logoutTime,
+            Priority: x.priority,
+            Status: x.status,
+            Description: (x as any).description || "",
+            "Total Hours": x.hours,
+        }));
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Timesheets");
+        XLSX.writeFile(workbook, "Timesheets.xlsx");
+    };
+
+    return(
+        <>
+        {!hideFilters ? (
+        <Box sx={FilterStyle}>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <Select value={selectedYear} onChange={handleYearChange} displayEmpty sx={selectStyle}>
+                    <MenuItem value="All">All Years</MenuItem>
+                    {years.map(y => (<MenuItem key={y} value={y}>{y}</MenuItem>))}
+                </Select>
+                <Select value={selectedMonth} onChange={handleMonthChange} displayEmpty sx={selectStyle}>
+                    <MenuItem value="All">All Months</MenuItem>
+                    {monthsForYear.map(m => (<MenuItem key={m} value={m}>{m}</MenuItem>))}
+                </Select>
+            </Box>~
+            <Box >
+                <Button variant="contained" color="error" onClick={multiDelete} disabled={selectedIds.length === 0} sx={{mr:2}}>Multi Delete</Button>
+                <Button variant="contained" color="success" onClick={downloadExcel}>Download Excel</Button>
+            </Box>
+        </Box>
+        ) : null}
+
+        {/*Trying */}
+        
+        <TableContainer>
+            <Table size="small" sx={{tableLayout:"fixed"}}>
+                <TableHead >
+                    <TableRow>
+                        <TableCell sx={TableHeadStyle}>
+                            <Checkbox color="default" checked={selectedIds.length === filteredItems.length && filteredItems.length>0} indeterminate={selectedIds.length > 0 && selectedIds.length < filteredItems.length} onChange={Selectall} />
+                            </TableCell>
+                            {tableheaddata.map((x) => (
+                                <TableCell sx={TableHeadStyle} key={x.id}>
+                                    {x.name}
+                                </TableCell>
+                            ))}
+                            <TableCell sx={TableHeadStyle}>Actions</TableCell>
+                    </TableRow>
+                </TableHead>
+                <TableBody>
+                    {filteredItems.map((x) => (
+                        <TableRow key={x.id} sx={{backgroundColor: x.status === "Leave" ? "#e3b9b9" : "transparent", }}>
+                        <TableCell sx={TableCellStyle}><Checkbox checked={selectedIds.includes(x.id)} onChange={()=>CheckboxClick(x.id)} /></TableCell>
+                        <TableCell sx={TableCellStyle}>{formatDate(x.date)}</TableCell>
+                        <TableCell sx={TableCellStyle}>{x.loginTime}</TableCell>
+                        <TableCell sx={TableCellStyle}>{x.logoutTime}</TableCell>
+                        <TableCell sx={TableCellStyle}>{x.hours}</TableCell>
+                        <Tooltip title={x.project} placement="right" arrow>
+                            <TableCell sx={TableCellStyle}>{x.project}</TableCell>
+                        </Tooltip>
+                        <Tooltip title={x.task} placement="right" arrow>
+                            <TableCell sx={TableCellStyle}>{x.task}</TableCell>
+                        </Tooltip>
+                        <TableCell sx={TableCellStyle}>{x.taskhours}</TableCell>
+                        <TableCell sx={TableCellStyle}>{x.priority}</TableCell>
+                        <TableCell sx={TableCellStyle}>{x.status}</TableCell>
+                        <TableCell >
+                            <IconButton color="primary" onClick={() => openDialogForEdit(x)} size="small">
+                            <EditIcon />
+                            </IconButton>
+                            <IconButton color="error" onClick={() => handleDelete(x.id)} size="small">
+                            <DeleteIcon />
+                            </IconButton>
+                        </TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+
+
+            </Table>
+        </TableContainer>
+        <CollectDataForm open={dialogOpen} initialData={editingItem} onClose={handleDialogClose} onSave={handleDialogSave} />
+        </>
+        
+    );
+
+};
+
+export default TimesheetTable; 
