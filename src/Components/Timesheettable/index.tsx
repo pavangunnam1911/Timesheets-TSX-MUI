@@ -3,13 +3,14 @@ import type { SelectChangeEvent } from "@mui/material";
 import React, { useMemo, useState, useEffect } from "react";
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import useLocalStorage from "../../Hooks/useLocalstorage";
 import CollectDataForm from "../DataForm/DataForm";
 import * as XLSX from 'xlsx';
 import type { Timesheet } from "../../Interfaces/Timesheet";
 import useTotalHours from "../../Hooks/useTotalHours";
 import useTotalLeaves from "../../Hooks/useTotalLeaves";
 import useProjectHours from "../../Hooks/useProjectHours";
+import useOvertime from "../../Hooks/useOverTime";
+import { useTimesheets } from "../../App";
 
 interface TableHeadData {
   name: string;
@@ -40,24 +41,19 @@ const projectBoxStyle = { display: 'flex', flexDirection: 'column', gap: 0.5, ma
 interface TimesheetTableProps {
     hideFilters?: boolean;
     onlyDate?: string;
-    items?: Timesheet[];
-    setItems?: (v: Timesheet[] | ((prev: Timesheet[]) => Timesheet[])) => void;
 }
 
-const TimesheetTable:React.FC<TimesheetTableProps> = ({ hideFilters = false, onlyDate, items: itemsProp, setItems: setItemsProp }) =>{
-    const isExternal = Array.isArray(itemsProp) && typeof setItemsProp === 'function';
-    const [localItems, localSetItems] = useLocalStorage<Timesheet[]>("timesheets", []);
-    const items = isExternal ? (itemsProp as Timesheet[]) : localItems;
-    const setItems = isExternal ? (setItemsProp as (v: Timesheet[] | ((prev: Timesheet[]) => Timesheet[])) => void) : localSetItems;
+const TimesheetTable:React.FC<TimesheetTableProps> = (props) =>{
+    
         
-
+    const {items,setItems} = useTimesheets();
     const [dialogOpen, setDialogOpen] = useState<boolean>(false);
     const [editingItem, setEditingItem] = useState<Timesheet | null>(null);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
     const Selectall =(event:React.ChangeEvent<HTMLInputElement>) =>{
         if (event.target.checked) {
-            const allRows = filteredItems.map(x=>x.id);
+            const allRows = filteredItems.map((x: { id: any; })=>x.id);
             setSelectedIds(allRows);
         }
         else{
@@ -72,14 +68,14 @@ const TimesheetTable:React.FC<TimesheetTableProps> = ({ hideFilters = false, onl
 
     const handleDelete = (id: string) => {
         if (window.confirm("Are you sure you want to delete this entry?")) {
-            setItems(items.filter(x => x.id !== id));
+            setItems(items.filter((x: { id: string; }) => x.id !== id));
             setSelectedIds(prev => prev.filter(selectedId => selectedId !== id)); 
         }
     };
 
     const multiDelete = () => {
        if (window.confirm(`Are you sure you want to delete selected entries?`)) {
-            setItems(items.filter(x => !selectedIds.includes(x.id)));
+            setItems(items.filter((x: { id: string; }) => !selectedIds.includes(x.id)));
             setSelectedIds([]);
         }
     }
@@ -96,7 +92,7 @@ const TimesheetTable:React.FC<TimesheetTableProps> = ({ hideFilters = false, onl
     };
 
     const handleDialogSave = (item: Timesheet) => {
-        setItems(items.map(x => x.id === item.id ? item : x));
+        setItems(items.map((x: { id: string; }) => x.id === item.id ? item : x));
         setDialogOpen(false);
         setEditingItem(null);
     };
@@ -107,8 +103,8 @@ const TimesheetTable:React.FC<TimesheetTableProps> = ({ hideFilters = false, onl
         const [selectedDay, setSelectedDay] = useState<string>("All");
 
         useEffect(() => {
-            if (onlyDate) {
-                const parts = onlyDate.split("-");
+            if (props.onlyDate) {
+                const parts = props.onlyDate.split("-");
                 if (parts.length === 3) {
                     const [y,m,d] = parts;
                     setSelectedYear(y);
@@ -116,11 +112,11 @@ const TimesheetTable:React.FC<TimesheetTableProps> = ({ hideFilters = false, onl
                     setSelectedDay(d);
                 }
             }
-        }, [onlyDate]);
+        }, [props.onlyDate]);
 
     const years = useMemo(() => {
         const a = new Set<string>();
-        items.forEach(x => {
+        items.forEach((x: { date: string; }) => {
             if (x.date) a.add(x.date.split("-")[0]);
         });
         return Array.from(a).sort();
@@ -152,6 +148,7 @@ const TimesheetTable:React.FC<TimesheetTableProps> = ({ hideFilters = false, onl
     const totalHours = useTotalHours(filteredItems);
     const totalLeaves = useTotalLeaves(filteredItems);
     const projectHours = useProjectHours(filteredItems);
+    const totalOverTime = useOvertime(filteredItems);
 
     const filterActive = selectedYear !== "All" || selectedMonth !== "All" || selectedDay !== "All";
 
@@ -174,7 +171,7 @@ const TimesheetTable:React.FC<TimesheetTableProps> = ({ hideFilters = false, onl
     };
 
     const downloadExcel = () => {
-        const exportData = filteredItems.map((x) => ({
+        const exportData = filteredItems.map((x:Timesheet) => ({
             Date: x.date,
             Name: x.name,
             Project: x.project,
@@ -194,7 +191,7 @@ const TimesheetTable:React.FC<TimesheetTableProps> = ({ hideFilters = false, onl
 
     return(
         <>
-        {!hideFilters ? (
+        {!props.hideFilters ? (
         <>
         <Box sx={FilterStyle}>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -223,6 +220,7 @@ const TimesheetTable:React.FC<TimesheetTableProps> = ({ hideFilters = false, onl
                 <CardContent sx={{ width: '100%' }}>
                     <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5 }}>Total Hours</Typography>
                     <Typography variant="h4" sx={{ fontWeight: 700 }}>{totalHours}</Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: 12 }}>Overtime: {totalOverTime} hrs</Typography>
                 </CardContent>
             </Card>
 
@@ -269,7 +267,7 @@ const TimesheetTable:React.FC<TimesheetTableProps> = ({ hideFilters = false, onl
                     </TableRow>
                 </TableHead>
                 <TableBody>
-                    {filteredItems.map((x) => (
+                    {filteredItems.map((x: Timesheet) => (
                         <TableRow key={x.id} sx={{backgroundColor: x.status === "Leave" ? "#e3b9b9" : "transparent", }}>
                         <TableCell sx={TableCellStyle}><Checkbox checked={selectedIds.includes(x.id)} onChange={()=>CheckboxClick(x.id)} /></TableCell>
                         <TableCell sx={TableCellStyle}>{formatDate(x.date)}</TableCell>

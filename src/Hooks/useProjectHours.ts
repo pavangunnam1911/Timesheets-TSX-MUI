@@ -18,9 +18,9 @@ export type ProjectHours = {
 export default function useProjectHours(items: Timesheet[] = []): ProjectHours[] {
   const map = new Map<string, number>();
 
-  for (const it of items) {
-    const key = it.project || "(No project)";
-    const mins = parseHoursToMinutes(it.hours as string | undefined);
+  for (const item of items) {
+    const key = item.project || "(No project)";
+    const mins = parseHoursToMinutes(item.hours as string | undefined);
     map.set(key, (map.get(key) || 0) + mins);
   }
 
@@ -32,4 +32,4 @@ export default function useProjectHours(items: Timesheet[] = []): ProjectHours[]
 
   arr.sort((a, b) => a.project.localeCompare(b.project, undefined, { sensitivity: "base" }));
   return arr;
-}
+};

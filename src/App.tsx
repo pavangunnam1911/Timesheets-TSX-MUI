@@ -9,6 +9,12 @@ import CollectDataForm from './Components/DataForm/DataForm';
 import { useState } from 'react';
 import useLocalStorage from './Hooks/useLocalstorage';
 import type { Timesheet } from './Interfaces/Timesheet';
+import { createContext,useContext } from 'react';
+
+
+
+const TimesheetContext = createContext<any>(null);
+export const useTimesheets = () => useContext(TimesheetContext);
 
 function App() {
   const [open,setOpen] = useState(false);
@@ -29,16 +35,18 @@ function App() {
 
   return (
     <>
+    <TimesheetContext.Provider value={{items,setItems}}>
     <BrowserRouter>
-  <Header></Header>
-  <Toolbar />
+    <Header></Header>
+    <Toolbar />
     <Routes>
-      <Route path='/home' element={<WelcomePage items={items} setItems={setItems}/>}></Route>
-      <Route path='/progress' element={<TimesheetTable items={items} setItems={setItems}/>}></Route>
+      <Route path='/home' element={<WelcomePage />}></Route>
+      <Route path='/progress' element={<TimesheetTable />}></Route>
     </Routes>
     <FloatingActionButton onClick={handleDialogOpen}></FloatingActionButton>
     <CollectDataForm open={open} onClose={handleDialogClose} onSave={handleSave}></CollectDataForm>
     </BrowserRouter>
+    </TimesheetContext.Provider>
     </>
     
   )
