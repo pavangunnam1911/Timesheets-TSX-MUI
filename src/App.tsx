@@ -1,8 +1,8 @@
 import { Route,Routes, BrowserRouter } from 'react-router-dom';
 import './App.css';
 import Header from "./Components/Navbar";
+import { Toolbar } from "@mui/material";
 import WelcomePage from "./Pages/WelcomePage";
-import Count from "./Pages/Count";
 import TimesheetTable from "./Components/Timesheettable";
 import FloatingActionButton from './Components/Fab';
 import CollectDataForm from './Components/DataForm/DataForm';
@@ -30,11 +30,11 @@ function App() {
   return (
     <>
     <BrowserRouter>
-    <Header></Header>
+  <Header></Header>
+  <Toolbar />
     <Routes>
       <Route path='/home' element={<WelcomePage items={items} setItems={setItems}/>}></Route>
       <Route path='/progress' element={<TimesheetTable items={items} setItems={setItems}/>}></Route>
-      <Route path='/count'element={<Count/>}></Route>
     </Routes>
     <FloatingActionButton onClick={handleDialogOpen}></FloatingActionButton>
     <CollectDataForm open={open} onClose={handleDialogClose} onSave={handleSave}></CollectDataForm>

@@ -3,7 +3,6 @@ import {Link} from "react-router-dom"
 const pages = [
   { name: "Home", id: "home" },
   { name: "My Time Sheets", id: "progress" },
-  { name: "Count", id: "count" },
 ];
 
 const stackStyle = {display: 'flex',flexDirection: 'row',justifyContent: 'space-between',alignItems: 'center',width: '100%'};

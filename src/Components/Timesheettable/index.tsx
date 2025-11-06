@@ -1,4 +1,4 @@
-import {  Box, Button, Checkbox, MenuItem, Select, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton, Tooltip} from "@mui/material";
+import {  Box, Button, Card, CardContent, Checkbox, MenuItem, Select, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton, Tooltip, Typography, Stack} from "@mui/material";
 import type { SelectChangeEvent } from "@mui/material";
 import React, { useMemo, useState, useEffect } from "react";
 import EditIcon from '@mui/icons-material/Edit';
@@ -7,6 +7,9 @@ import useLocalStorage from "../../Hooks/useLocalstorage";
 import CollectDataForm from "../DataForm/DataForm";
 import * as XLSX from 'xlsx';
 import type { Timesheet } from "../../Interfaces/Timesheet";
+import useTotalHours from "../../Hooks/useTotalHours";
+import useTotalLeaves from "../../Hooks/useTotalLeaves";
+import useProjectHours from "../../Hooks/useProjectHours";
 
 interface TableHeadData {
   name: string;
@@ -29,10 +32,10 @@ const TableHeadStyle = {backgroundColor: "rgb(25,118,210)",color: "#ffffff",font
 const selectStyle = {color:"#000000",width:120,mr:5}
 const FilterStyle = {display:"flex",justifyContent:"space-between",mb:2}
 const TableCellStyle = {textOverflow:"ellipsis",overflow:"hidden",textAlign:"center"}
-interface TimesheetTableProps {
-    hideFilters?: boolean;
-    onlyDate?: string; 
-}
+const cardTotalStyle = { flex: 1, borderRadius: 2, boxShadow: 1, bgcolor: 'background.paper', minHeight: 88, display: 'flex', alignItems: 'center' }
+const cardleavesStyle ={ flex: 1, borderRadius: 2, boxShadow: 1, bgcolor: 'background.paper', minHeight: 88, display: 'flex', alignItems: 'center' }
+const cardProjectStyle = { flex: 2, borderRadius: 2, boxShadow: 1, bgcolor: 'background.paper', minHeight: 88 }
+const projectBoxStyle = { display: 'flex', flexDirection: 'column', gap: 0.5, maxHeight: 108, overflow: 'auto' };
 
 interface TimesheetTableProps {
     hideFilters?: boolean;
@@ -42,10 +45,14 @@ interface TimesheetTableProps {
 }
 
 const TimesheetTable:React.FC<TimesheetTableProps> = ({ hideFilters = false, onlyDate, items: itemsProp, setItems: setItemsProp }) =>{
-        const isExternal = Array.isArray(itemsProp) && typeof setItemsProp === 'function';
-        const [localItems, localSetItems] = useLocalStorage<Timesheet[]>("timesheets", []);
-        const items = isExternal ? (itemsProp as Timesheet[]) : localItems;
-        const setItems = isExternal ? (setItemsProp as (v: Timesheet[] | ((prev: Timesheet[]) => Timesheet[])) => void) : localSetItems;
+    const isExternal = Array.isArray(itemsProp) && typeof setItemsProp === 'function';
+    const [localItems, localSetItems] = useLocalStorage<Timesheet[]>("timesheets", []);
+    const items = isExternal ? (itemsProp as Timesheet[]) : localItems;
+    const setItems = isExternal ? (setItemsProp as (v: Timesheet[] | ((prev: Timesheet[]) => Timesheet[])) => void) : localSetItems;
+        
+
+    const [dialogOpen, setDialogOpen] = useState<boolean>(false);
+    const [editingItem, setEditingItem] = useState<Timesheet | null>(null);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
     const Selectall =(event:React.ChangeEvent<HTMLInputElement>) =>{
@@ -77,10 +84,6 @@ const TimesheetTable:React.FC<TimesheetTableProps> = ({ hideFilters = false, onl
         }
     }
 
-
-
-    const [dialogOpen, setDialogOpen] = useState<boolean>(false);
-    const [editingItem, setEditingItem] = useState<Timesheet | null>(null);
 
     const openDialogForEdit = (x: Timesheet) => {
         setEditingItem(x);
@@ -130,8 +133,10 @@ const TimesheetTable:React.FC<TimesheetTableProps> = ({ hideFilters = false, onl
             const [year, month] = x.date.split("-");
             if (selectedYear === "All" || selectedYear === year) b.add(month);
         });
-        return Array.from(b).sort();
+        return Array.from(b).sort((a, b) => Number(a) - Number(b));
     }, [items, selectedYear]);
+
+    const monthNames = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
     const filteredItems = useMemo(() => {
         return items.filter(x => {
@@ -143,6 +148,12 @@ const TimesheetTable:React.FC<TimesheetTableProps> = ({ hideFilters = false, onl
             return true;
         });
     }, [items, selectedYear, selectedMonth, selectedDay]);
+
+    const totalHours = useTotalHours(filteredItems);
+    const totalLeaves = useTotalLeaves(filteredItems);
+    const projectHours = useProjectHours(filteredItems);
+
+    const filterActive = selectedYear !== "All" || selectedMonth !== "All" || selectedDay !== "All";
 
     const handleYearChange = (event: SelectChangeEvent) => {
         const x = event.target.value;
@@ -184,6 +195,7 @@ const TimesheetTable:React.FC<TimesheetTableProps> = ({ hideFilters = false, onl
     return(
         <>
         {!hideFilters ? (
+        <>
         <Box sx={FilterStyle}>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
                 <Select value={selectedYear} onChange={handleYearChange} displayEmpty sx={selectStyle}>
@@ -192,18 +204,55 @@ const TimesheetTable:React.FC<TimesheetTableProps> = ({ hideFilters = false, onl
                 </Select>
                 <Select value={selectedMonth} onChange={handleMonthChange} displayEmpty sx={selectStyle}>
                     <MenuItem value="All">All Months</MenuItem>
-                    {monthsForYear.map(m => (<MenuItem key={m} value={m}>{m}</MenuItem>))}
+                    {monthsForYear.map(month => {
+                        const num = parseInt(month, 10);
+                        const label = (!isNaN(num) && num >=1 && num <=12) ? monthNames[num-1] : month;
+                        return (<MenuItem key={month} value={month}>{label}</MenuItem>)
+                    })}
                 </Select>
-            </Box>~
+            </Box>
             <Box >
                 <Button variant="contained" color="error" onClick={multiDelete} disabled={selectedIds.length === 0} sx={{mr:2}}>Multi Delete</Button>
                 <Button variant="contained" color="success" onClick={downloadExcel}>Download Excel</Button>
             </Box>
         </Box>
-        ) : null}
 
-        {/*Trying */}
-        
+        {filterActive && (
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 2 }}>
+            <Card sx={cardTotalStyle}>
+                <CardContent sx={{ width: '100%' }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5 }}>Total Hours</Typography>
+                    <Typography variant="h4" sx={{ fontWeight: 700 }}>{totalHours}</Typography>
+                </CardContent>
+            </Card>
+
+            <Card sx={cardleavesStyle}>
+                <CardContent sx={{ width: '100%' }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ mb: 0.5 }}>Total Leaves</Typography>
+                    <Typography variant="h4" sx={{ fontWeight: 700 }}>{totalLeaves} days</Typography>
+                </CardContent>
+            </Card>
+
+            <Card sx={cardProjectStyle}>
+                <CardContent>
+                    <Typography variant="caption" color="text.secondary" sx={{ mb: 1 }}>Project Hours</Typography>
+                    <Box sx={projectBoxStyle}>
+                        {projectHours.length > 0 ? projectHours.map(ph => (
+                            <Box key={ph.project} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <Typography variant="body2" color="text.primary">{ph.project}</Typography>
+                                <Typography variant="body2" color="text.secondary">{ph.hoursString}</Typography>
+                            </Box>
+                        )) : (
+                            <Typography variant="body2" color="text.secondary">No projects</Typography>
+                        )}
+                    </Box>
+                </CardContent>
+            </Card>
+        </Stack>
+    )}
+        </>
+        ) : null}
+    
         <TableContainer>
             <Table size="small" sx={{tableLayout:"fixed"}}>
                 <TableHead >
